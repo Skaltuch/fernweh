@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { api } from "../api.js";
 
-export default function SettingsForm({ settings, onSave, onClose }) {
+export default function SettingsForm({ settings, onSave, onImport, onClose }) {
   const [form, setForm] = useState({
     monthlyIncome: settings.monthlyIncome || "",
     savingGoalName: settings.savingGoalName || "",
@@ -14,6 +15,7 @@ export default function SettingsForm({ settings, onSave, onClose }) {
   });
   const [newTime, setNewTime] = useState("");
   const [saving, setSaving] = useState(false);
+  const [backupMessage, setBackupMessage] = useState("");
 
   function update(field, value) {
     setForm((f) => ({ ...f, [field]: value }));
@@ -52,6 +54,31 @@ export default function SettingsForm({ settings, onSave, onClose }) {
       onClose();
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function exportBackup() {
+    const data = await api.exportData();
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `fernweh-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    setBackupMessage("Backup downloaded.");
+  }
+
+  async function importBackup(event) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    try {
+      const data = JSON.parse(await file.text());
+      await onImport(data);
+      setBackupMessage("Backup restored.");
+    } catch (error) {
+      setBackupMessage(error.message || "Could not restore that backup.");
     }
   }
 
@@ -165,6 +192,21 @@ export default function SettingsForm({ settings, onSave, onClose }) {
                   Add time
                 </button>
               </div>
+            </div>
+
+            <div className="field full backup-tools">
+              <label>Local data backup</label>
+              <p className="field-help">Save your settings and all previous spending days as a file.</p>
+              <div className="backup-actions">
+                <button type="button" className="btn-ghost" onClick={exportBackup}>
+                  Download backup
+                </button>
+                <label className="btn-ghost file-button">
+                  Restore backup
+                  <input type="file" accept="application/json,.json" onChange={importBackup} />
+                </label>
+              </div>
+              {backupMessage && <span className="backup-message">{backupMessage}</span>}
             </div>
           </div>
 

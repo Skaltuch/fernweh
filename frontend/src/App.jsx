@@ -65,6 +65,11 @@ export default function App() {
     await refresh();
   }
 
+  async function handleImportData(data) {
+    await api.importData(data);
+    await refresh();
+  }
+
   if (loading) {
     return (
       <div style={{ padding: 40, textAlign: "center", color: "#8FA3BF" }}>
@@ -187,6 +192,7 @@ export default function App() {
         <SettingsForm
           settings={settings}
           onSave={handleSaveSettings}
+          onImport={handleImportData}
           onClose={() => setShowSettings(false)}
         />
       )}

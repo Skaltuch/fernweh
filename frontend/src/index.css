@@ -776,6 +776,11 @@ body::before {
 .modal-backdrop { background: rgba(3, 7, 13, 0.78); }
 .modal-sheet { background: #141c2a; border-color: var(--hairline); }
 .modal-sheet h2 { color: var(--text); }
+.field-help { color: var(--text-muted); font-size: 0.76rem; margin: 0; }
+.backup-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.file-button { display: inline-flex; align-items: center; cursor: pointer; }
+.file-button input { display: none; }
+.backup-message { color: var(--sage); font-size: 0.76rem; }
 
 @keyframes page-in { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 

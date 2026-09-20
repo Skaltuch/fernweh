@@ -1,13 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../api.js";
 
-function urlBase64ToUint8Array(base64String) {
-  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
-  const rawData = atob(base64);
-  return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
-}
-
 export default function NotificationSetup() {
   const [permission, setPermission] = useState(
     typeof Notification !== "undefined" ? Notification.permission : "unsupported"
@@ -15,11 +8,27 @@ export default function NotificationSetup() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
 
-  const supported =
-    "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+  const supported = "Notification" in window;
 
   useEffect(() => {
     if (typeof Notification !== "undefined") setPermission(Notification.permission);
+  }, []);
+
+  useEffect(() => {
+    const checkReminder = async () => {
+      if (localStorage.getItem("fernweh.remindersEnabled") !== "true" || Notification.permission !== "granted") return;
+      const settings = await api.getSettings();
+      const now = new Date();
+      const time = now.toTimeString().slice(0, 5);
+      const key = `fernweh.reminder.${now.toISOString().slice(0, 10)}.${time}`;
+      if (settings.reminderTimes?.includes(time) && !localStorage.getItem(key)) {
+        new Notification("Fernweh check-in", { body: "Take a moment to check today's spending." });
+        localStorage.setItem(key, "true");
+      }
+    };
+    const timer = window.setInterval(checkReminder, 30000);
+    checkReminder();
+    return () => window.clearInterval(timer);
   }, []);
 
   async function enable() {
@@ -29,24 +38,11 @@ export default function NotificationSetup() {
       const perm = await Notification.requestPermission();
       setPermission(perm);
       if (perm !== "granted") {
-        setMessage("Notifications were blocked. Enable them in your browser/phone settings to get reminders.");
+        setMessage("Notifications were blocked. Enable them in your browser or phone settings.");
         return;
       }
-
-      const { publicKey } = await api.getVapidPublicKey();
-      if (!publicKey) {
-        setMessage("Backend has no VAPID key configured yet — see the README to set one up.");
-        return;
-      }
-
-      const reg = await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(publicKey),
-      });
-
-      await api.subscribePush(sub.toJSON());
-      setMessage("Reminders are on. You'll get a push at your scheduled times.");
+      localStorage.setItem("fernweh.remindersEnabled", "true");
+      setMessage("Reminders are on while Fernweh is open in this browser.");
     } catch (err) {
       setMessage(`Couldn't enable notifications: ${err.message}`);
     } finally {
@@ -58,8 +54,12 @@ export default function NotificationSetup() {
     setBusy(true);
     setMessage("");
     try {
-      const res = await api.testPush();
-      setMessage(res.sent > 0 ? "Test notification sent." : "No active subscription found yet — enable reminders first.");
+      if (Notification.permission !== "granted") {
+        setMessage("Enable reminders first so the browser can show a test notification.");
+        return;
+      }
+      new Notification("Fernweh", { body: "Your travel fund is waiting for you." });
+      setMessage("Test notification sent.");
     } catch (err) {
       setMessage(`Test failed: ${err.message}`);
     } finally {
@@ -72,8 +72,7 @@ export default function NotificationSetup() {
       <div className="card">
         <h2>Reminders</h2>
         <p className="card-meta">
-          Push notifications aren't supported in this browser. On a phone, add this app to your
-          home screen first (Share → Add to Home Screen), then open it from there.
+          Browser notifications aren't supported here. Your budget still works offline on this device.
         </p>
       </div>
     );
@@ -84,11 +83,11 @@ export default function NotificationSetup() {
       <h2>Reminders</h2>
       <div className="notif-status" style={{ marginBottom: 12 }}>
         <span className={`dot ${permission === "granted" ? "on" : "off"}`} />
-        {permission === "granted" ? "Notifications enabled" : "Notifications not set up yet"}
+        {permission === "granted" ? "Browser reminders enabled" : "Reminders not set up yet"}
       </div>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         <button className="btn-primary" onClick={enable} disabled={busy}>
-          {permission === "granted" ? "Re-subscribe this device" : "Enable reminders"}
+          {permission === "granted" ? "Keep reminders enabled" : "Enable reminders"}
         </button>
         <button className="btn-ghost" onClick={sendTest} disabled={busy}>
           Send test

@@ -1,17 +1,13 @@
-# Fernweh — a budget tracker built to fund a trip abroad
+# Fernweh - a private, frontend-only travel budget tracker
 
-A React (Vite) frontend + Node/Express backend. You set your income, a daily
-spending limit, a savings goal, and an "over threshold" alert. Every expense
-you log updates a live dashboard, and the backend pushes phone notifications
-at times you choose — a spending check plus a motivational quote.
+Fernweh is a React/Vite app for tracking spending, daily limits, savings goals,
+trends, and browser reminders. All data is stored locally in the browser using
+`localStorage`. No account, database, backend, or API key is required.
 
-```
-fernweh/
-  backend/    Express API + SQLite + web-push + cron reminders
-  frontend/   React app (Vite) — the UI you open on your phone
-```
+The old `backend/` folder is no longer used by the app and can be archived or
+removed from the repository.
 
-## 1. What each piece does
+## Features
 
 - **Settings**: monthly income, daily spend limit, "extra spend" alert
   threshold, saving goal (name/amount/saved/target date), reminder times,
@@ -22,150 +18,50 @@ fernweh/
   spend, projected month-end savings, a streak counter (consecutive days
   under your limit), a 30-day spend trend chart, and spend-by-category.
 - **Goal tracking**: progress bar toward your savings goal.
-- **Notifications**: real push notifications (Web Push API) sent by the
-  backend at your chosen times each day (spending check + motivational
-  quote), plus an instant alert the moment a day's spending crosses your
-  "extra spend" threshold.
+- **Reminders**: browser notifications and scheduled check-ins while the app is
+  open. True server push is intentionally not used in this frontend-only build.
 
-## 2. Install and run locally
+## Run locally
 
 You need Node.js 18+ installed.
-
-### Backend
-
-```bash
-cd backend
-npm install
-cp .env.example .env
-npm run generate-vapid      # prints a VAPID public/private key pair
-```
-
-Paste the two keys it prints into `.env` as `VAPID_PUBLIC_KEY` and
-`VAPID_PRIVATE_KEY` (a `VAPID_SUBJECT` of `mailto:you@example.com` is fine
-to leave as-is). Then start the server:
-
-```bash
-npm start          # http://localhost:4000
-```
-
-The SQLite database file (`fernweh.db`) is created automatically on first
-run — no separate database setup needed for local use.
-
-### Frontend
-
-In a second terminal:
 
 ```bash
 cd frontend
 npm install
-npm run dev         # http://localhost:5173
+npm run dev
 ```
 
-Open `http://localhost:5173` in your browser. The dev server proxies
-`/api/*` calls to the backend on port 4000, so you don't need to configure
-anything else locally.
+Open `http://localhost:5173` in your browser. Settings and expenses persist on
+that browser and device.
 
-On first load you'll be prompted to fill in your budget (income, daily
-limit, saving goal, reminder times) — that's the `Budget` button in the
-header if you want to change it later.
+Build for production with `npm run build`.
 
-## 3. Using it on your phone (so push notifications actually work)
+## Phone use
 
-Push notifications require the page to be served over HTTPS (localhost is
-exempt, but your phone can't reach your laptop's `localhost`). The
-straightforward path:
+Deploy the `frontend/` folder to Vercel, then:
 
-1. Deploy the frontend and backend (see below).
-2. On your phone, open the deployed frontend URL in the browser.
-3. Add it to your home screen (iOS Safari: Share → **Add to Home Screen**;
-   Android Chrome: menu → **Install app** / **Add to Home Screen**). This
-   makes it behave like a standalone app (see `frontend/public/manifest.json`).
-4. Open it from the home screen icon, tap **Enable reminders** under
-   "Reminders", and accept the notification permission prompt.
-5. Use **Send test** to confirm a push arrives before relying on the
-   scheduled reminders.
+1. Open the deployed HTTPS URL on your phone.
+2. Add it to the home screen.
+3. Open the shortcut and use the Goal page to enable reminders.
 
-iOS note: push notifications for home-screen web apps need iOS 16.4+, and
-the app **must** be opened from the home-screen icon (not Safari directly)
-the first time you enable them.
+Because there is no backend, scheduled reminders run while the app is open.
+The budget data remains private to the browser profile where it was entered.
 
-## 4. Deploying
+## Deploy to Vercel
 
-### Frontend → Vercel
+In Vercel, set:
 
-Point Vercel at the `frontend/` folder (framework preset: Vite). Set the
-build command to `npm run build` and output directory to `dist` (Vercel
-usually detects this automatically). If your backend lives on a different
-domain, set an environment variable in Vercel:
-
-```
-VITE_API_BASE=https://your-backend-domain.com
+```text
+Root Directory: frontend
+Framework: Vite
+Build Command: npm run build
+Output Directory: dist
 ```
 
-and redeploy — `src/api.js` reads this to prefix every API call.
+No environment variables are needed.
 
-### Backend → not Vercel serverless (important)
+## Future options
 
-The backend keeps two things that don't fit Vercel's serverless functions:
-
-1. **A SQLite file on disk.** Serverless functions get an ephemeral
-   filesystem, so `fernweh.db` would reset on every cold start.
-2. **A running cron job** (`node-cron`, checked every minute) that fires
-   your scheduled reminders. Serverless functions only run when invoked —
-   there's no long-lived process to tick the clock.
-
-Easiest fixes, pick one:
-
-- **Simplest — a small always-on host**: deploy `backend/` as-is to
-  [Render](https://render.com), [Railway](https://railway.app), or
-  [Fly.io](https://fly.io) (all have free/cheap tiers for a Node service).
-  SQLite and `node-cron` both work unmodified there.
-- **Stay on Vercel for everything**: swap SQLite for a hosted database
-  (e.g. [Turso](https://turso.tech) (SQLite-compatible), Vercel Postgres, or
-  Supabase), rewrite `db.js` to that client, and replace `node-cron` with a
-  [Vercel Cron Job](https://vercel.com/docs/cron-jobs) that hits a new
-  `/api/cron/tick` route once a minute — move the body of
-  `cron/reminders.js`'s scheduled callback into that route handler.
-
-Whichever you choose, set these environment variables on the backend host:
-
-```
-PORT=4000
-DB_PATH=./fernweh.db          # or your hosted DB connection string, if you swap it
-VAPID_PUBLIC_KEY=...
-VAPID_PRIVATE_KEY=...
-VAPID_SUBJECT=mailto:you@example.com
-CORS_ORIGIN=https://your-frontend-domain.vercel.app
-```
-
-## 5. API reference (for extending it)
-
-```
-GET    /api/settings
-PUT    /api/settings              { monthlyIncome, savingGoalName, savingGoalAmount,
-                                     savingGoalSaved, savingGoalTargetDate,
-                                     dailySpendLimit, extraSpendThreshold,
-                                     reminderTimes: ["HH:MM", ...], timezone }
-
-GET    /api/expenses?date=YYYY-MM-DD
-GET    /api/expenses?from=YYYY-MM-DD&to=YYYY-MM-DD
-POST   /api/expenses              { amount, category, note?, date? }
-DELETE /api/expenses/:id
-
-GET    /api/metrics/summary       today / month / streak / trend / byCategory / goal
-
-GET    /api/push/vapid-public-key
-POST   /api/push/subscribe        (browser PushSubscription object)
-POST   /api/push/unsubscribe      { endpoint }
-POST   /api/push/test             sends one test push to all subscribed devices
-```
-
-## 6. Where to take it next
-
-- Swap the single-user `settings` row for real accounts if more than one
-  person will use it.
-- Add a "mark as saved" flow that moves money from month-end surplus into
-  `savingGoalSaved` automatically.
+- Add an export/import flow so browser data can move between devices.
 - Add category budgets, not just a single daily limit.
-- Add data export (CSV) — the `expenses` table already has everything
-  needed.
+- Add an optional hosted account service if multi-device sync is needed.

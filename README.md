@@ -75,6 +75,9 @@ VAPID_SUBJECT=mailto:you@example.com
 CORS_ORIGIN=https://your-service.onrender.com
 ```
 
+If you enter only an email address for `VAPID_SUBJECT`, the server will add
+the `mailto:` prefix automatically.
+
 The service must be always-on for the scheduler. Vercel static hosting alone
 cannot run this Node process continuously.
 

@@ -148,7 +148,10 @@ app.post("/api/push/test", async (req, res) => {
 app.get("*", (_req, res) => res.sendFile(path.join(__dirname, "dist", "index.html")));
 
 if (runtimeConfig.vapidPublicKey && runtimeConfig.vapidPrivateKey) {
-  webpush.setVapidDetails(runtimeConfig.vapidSubject || "mailto:you@example.com", runtimeConfig.vapidPublicKey, runtimeConfig.vapidPrivateKey);
+  const vapidSubject = runtimeConfig.vapidSubject?.includes(":")
+    ? runtimeConfig.vapidSubject
+    : `mailto:${runtimeConfig.vapidSubject}`;
+  webpush.setVapidDetails(vapidSubject || "mailto:you@example.com", runtimeConfig.vapidPublicKey, runtimeConfig.vapidPrivateKey);
 } else {
   console.warn("[fernweh] VAPID keys are missing. Add them to frontend/push-config.js.");
 }

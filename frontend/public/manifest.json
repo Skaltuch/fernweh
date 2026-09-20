@@ -1,0 +1,16 @@
+{
+  "name": "Fernweh — Save now, wander later",
+  "short_name": "Fernweh",
+  "description": "A daily budget tracker built to fund your trip abroad.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#080D16",
+  "theme_color": "#080D16",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

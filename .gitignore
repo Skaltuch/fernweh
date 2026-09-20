@@ -24,3 +24,7 @@ Thumbs.db
 # Temporary files
 tmp/
 temp/
+
+# Local push service state
+frontend/push-data.json
+frontend/push-config.js

@@ -36,6 +36,10 @@ export default function App() {
     setSettings(s);
     setSummary(sum);
     setTodayExpenses(exp);
+    const endpoint = localStorage.getItem("fernweh.pushEndpoint");
+    if (endpoint) {
+      api.syncPushSnapshot({ endpoint, settings: s, summary: sum }).catch(() => {});
+    }
   }, []);
 
   useEffect(() => {

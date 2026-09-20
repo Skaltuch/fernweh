@@ -1,5 +1,15 @@
 const SETTINGS_KEY = "fernweh.settings";
 const EXPENSES_KEY = "fernweh.expenses";
+const BASE = import.meta.env.VITE_API_BASE || "";
+
+async function pushRequest(path, options = {}) {
+  const response = await fetch(`${BASE}/api/push${path}`, {
+    headers: { "Content-Type": "application/json" },
+    ...options,
+  });
+  if (!response.ok) throw new Error(await response.text());
+  return response.json();
+}
 
 const DEFAULT_SETTINGS = {
   monthlyIncome: 0,
@@ -142,4 +152,9 @@ export const api = {
   },
   deleteExpense: async (id) => write(EXPENSES_KEY, getExpenses().filter((expense) => expense.id !== id)),
   getSummary: async () => buildSummary(),
+  getVapidPublicKey: () => pushRequest("/vapid-public-key"),
+  subscribePush: (payload) => pushRequest("/subscribe", { method: "POST", body: JSON.stringify(payload) }),
+  syncPushSnapshot: (payload) => pushRequest("/snapshot", { method: "POST", body: JSON.stringify(payload) }),
+  unsubscribePush: (endpoint) => pushRequest("/unsubscribe", { method: "POST", body: JSON.stringify({ endpoint }) }),
+  testPush: (endpoint) => pushRequest("/test", { method: "POST", body: JSON.stringify({ endpoint }) }),
 };

@@ -170,10 +170,11 @@ export default function App() {
               <p>Small choices today become a place you have never been.</p>
             </div>
             <MetricsDashboard summary={summary} view="goal" />
-            <NotificationSetup />
           </section>
         )}
       </main>
+
+      <NotificationSetup />
 
       <nav className="bottom-nav" aria-label="Main navigation">
         {navItems.map((item) => (

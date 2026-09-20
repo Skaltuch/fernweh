@@ -18,8 +18,10 @@ removed from the repository.
   spend, projected month-end savings, a streak counter (consecutive days
   under your limit), a 30-day spend trend chart, and spend-by-category.
 - **Goal tracking**: progress bar toward your savings goal.
-- **Reminders**: browser notifications and scheduled check-ins while the app is
-  open. True server push is intentionally not used in this frontend-only build.
+- **Reminders**: a spending-aware browser notification every two hours plus
+  configured reminder times, rotating motivation, saving, and good-vibes copy
+  while the app is open. True server push is intentionally not used in this
+  frontend-only build.
 
 ## Run locally
 
@@ -44,8 +46,10 @@ Deploy the `frontend/` folder to Vercel, then:
 2. Add it to the home screen.
 3. Open the shortcut and use the Goal page to enable reminders.
 
-Because there is no backend, scheduled reminders run while the app is open.
-The budget data remains private to the browser profile where it was entered.
+Because there is no backend, reminders run while the app is open. The browser
+controls the system notification sound; Fernweh includes a soft chime for the
+manual test action where the browser permits page audio. The budget data
+remains private to the browser profile where it was entered.
 
 ## Deploy to Vercel
 

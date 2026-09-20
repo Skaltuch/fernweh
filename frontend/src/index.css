@@ -720,6 +720,12 @@ body::before {
   gap: 8px;
   margin: 0 0 16px;
 }
+.budget-status-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 12px 0 4px; }
+.status-panel { padding: 14px; background: rgba(20, 28, 42, 0.7); border: 1px solid var(--hairline); border-radius: 4px 14px 4px 14px; }
+.status-panel span, .status-panel small { display: block; color: var(--text-muted); font-size: 0.7rem; }
+.status-panel strong { display: block; color: var(--text); font-family: var(--serif); font-size: 1.3rem; font-weight: 500; margin: 5px 0 2px; }
+.status-panel.status-alert { border-color: rgba(255, 116, 103, 0.65); }
+.status-panel.status-alert strong, .status-panel.status-alert small { color: var(--rust); }
 .quick-stats div {
   padding: 14px 12px;
   background: rgba(20, 28, 42, 0.7);

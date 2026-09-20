@@ -9,6 +9,7 @@ import {
   BarChart,
   Bar,
 } from "recharts";
+import { money } from "../format.js";
 
 function fmtDay(dateStr) {
   const d = new Date(dateStr + "T00:00:00");
@@ -31,13 +32,13 @@ export default function MetricsDashboard({ summary, view = "all" }) {
           <div className="goal-orb"><strong>{summary.goal.progressPct}%</strong><span>funded</span></div>
           <div className="goal-detail">
             <div className="goal-row">
-              <span className="goal-name">{summary.goal.saved.toFixed(0)} / {summary.goal.amount.toFixed(0)}</span>
+              <span className="goal-name">{money(summary.goal.saved)} / {money(summary.goal.amount)}</span>
               <span className="goal-pct">{summary.goal.progressPct}%</span>
             </div>
             <div className="bar-track"><div className="bar-fill" style={{ width: `${summary.goal.progressPct}%` }} /></div>
             <p className="card-meta">
               {summary.goal.remaining > 0
-                ? `${summary.goal.remaining.toFixed(0)} to go${summary.goal.targetDate ? ` by ${summary.goal.targetDate}` : ""}.`
+                ? `${money(summary.goal.remaining)} to go${summary.goal.targetDate ? ` by ${summary.goal.targetDate}` : ""}.`
                 : "Goal reached - time to book it."}
             </p>
           </div>
@@ -49,16 +50,16 @@ export default function MetricsDashboard({ summary, view = "all" }) {
         <h2>This month</h2>
         <div className="metrics-grid">
           <div className="metric-tile">
-            <div className="value">{summary.month.spent.toFixed(0)}</div>
+            <div className="value">{money(summary.month.spent, { compact: true })}</div>
             <div className="label">spent so far</div>
           </div>
           <div className="metric-tile">
-            <div className="value">{summary.month.avgDailySpend.toFixed(0)}</div>
+            <div className="value">{money(summary.month.avgDailySpend, { compact: true })}</div>
             <div className="label">avg / day</div>
           </div>
           <div className="metric-tile">
-            <div className="value">{summary.month.projectedSavings.toFixed(0)}</div>
-            <div className="label">projected savings</div>
+            <div className="value">{money(summary.month.fixedSavings, { compact: true })}</div>
+            <div className="label">fixed savings</div>
           </div>
           <div className="metric-tile">
             <div className="value">{summary.streakDaysUnderLimit}</div>
@@ -69,8 +70,8 @@ export default function MetricsDashboard({ summary, view = "all" }) {
             <div className="label">days over limit (30d)</div>
           </div>
           <div className="metric-tile">
-            <div className="value">{summary.month.projectedSpend.toFixed(0)}</div>
-            <div className="label">projected month spend</div>
+            <div className="value">{money(summary.month.availableAfterSavings, { compact: true })}</div>
+            <div className="label">available after savings</div>
           </div>
         </div>
       </div>
@@ -150,7 +151,7 @@ export default function MetricsDashboard({ summary, view = "all" }) {
         <h2>{summary.goal.name}</h2>
         <div className="goal-row">
           <span className="goal-name">
-            {summary.goal.saved.toFixed(0)} / {summary.goal.amount.toFixed(0)}
+            {money(summary.goal.saved)} / {money(summary.goal.amount)}
           </span>
           <span className="goal-pct">{summary.goal.progressPct}%</span>
         </div>
@@ -159,7 +160,7 @@ export default function MetricsDashboard({ summary, view = "all" }) {
         </div>
         <p className="card-meta" style={{ marginTop: 10 }}>
           {summary.goal.remaining > 0
-            ? `${summary.goal.remaining.toFixed(0)} to go${
+            ? `${money(summary.goal.remaining)} to go${
                 summary.goal.targetDate ? ` by ${summary.goal.targetDate}` : ""
               }.`
             : "Goal reached — time to book it."}

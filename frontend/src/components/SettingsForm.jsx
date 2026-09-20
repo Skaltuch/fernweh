@@ -4,6 +4,7 @@ import { api } from "../api.js";
 export default function SettingsForm({ settings, onSave, onImport, onClose }) {
   const [form, setForm] = useState({
     monthlyIncome: settings.monthlyIncome || "",
+    monthlySavingsTarget: settings.monthlySavingsTarget || "",
     savingGoalName: settings.savingGoalName || "",
     savingGoalAmount: settings.savingGoalAmount || "",
     savingGoalSaved: settings.savingGoalSaved || 0,
@@ -42,7 +43,8 @@ export default function SettingsForm({ settings, onSave, onImport, onClose }) {
     try {
       await onSave({
         monthlyIncome: parseFloat(form.monthlyIncome) || 0,
-        savingGoalName: form.savingGoalName || "Trip to Europe",
+        monthlySavingsTarget: parseFloat(form.monthlySavingsTarget) || 0,
+        savingGoalName: form.savingGoalName || "My goal",
         savingGoalAmount: parseFloat(form.savingGoalAmount) || 0,
         savingGoalSaved: parseFloat(form.savingGoalSaved) || 0,
         savingGoalTargetDate: form.savingGoalTargetDate || null,
@@ -63,7 +65,7 @@ export default function SettingsForm({ settings, onSave, onImport, onClose }) {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `fernweh-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    link.download = `skaltuchet-backup-${new Date().toISOString().slice(0, 10)}.json`;
     link.click();
     URL.revokeObjectURL(url);
     setBackupMessage("Backup downloaded.");
@@ -111,6 +113,18 @@ export default function SettingsForm({ settings, onSave, onImport, onClose }) {
               />
             </div>
 
+            <div className="field full">
+              <label htmlFor="monthlySavings">Fixed monthly savings (TND)</label>
+              <input
+                id="monthlySavings"
+                type="number"
+                min="0"
+                step="0.001"
+                value={form.monthlySavingsTarget}
+                onChange={(e) => update("monthlySavingsTarget", e.target.value)}
+              />
+            </div>
+
             <div className="field">
               <label htmlFor="threshold">Extra-spend alert threshold</label>
               <input
@@ -136,7 +150,7 @@ export default function SettingsForm({ settings, onSave, onImport, onClose }) {
               <input
                 id="goalName"
                 type="text"
-                placeholder="Trip to Europe"
+                placeholder="My goal"
                 value={form.savingGoalName}
                 onChange={(e) => update("savingGoalName", e.target.value)}
               />

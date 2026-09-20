@@ -13,9 +13,10 @@ async function pushRequest(path, options = {}) {
 
 const DEFAULT_SETTINGS = {
   monthlyIncome: 0,
-  savingGoalName: "Trip to Europe",
+  savingGoalName: "My goal",
   savingGoalAmount: 0,
   savingGoalSaved: 0,
+  monthlySavingsTarget: 0,
   savingGoalTargetDate: null,
   dailySpendLimit: 0,
   extraSpendThreshold: 0,
@@ -77,6 +78,8 @@ function buildSummary() {
   });
   const activeDays = new Set(monthExpenses.map((expense) => expense.date)).size || 1;
   const dailyLimit = Number(settings.dailySpendLimit) || 0;
+  const threshold = Number(settings.extraSpendThreshold) || 0;
+  const todaySpent = sum(todayExpenses);
   let streakDaysUnderLimit = 0;
   for (let index = 0; index < 30; index += 1) {
     const day = dateOffset(-index);
@@ -88,29 +91,39 @@ function buildSummary() {
     ? trend.filter((point) => point.spent > dailyLimit).length
     : 0;
   const projectedSpend = monthExpenses.length ? (sum(monthExpenses) / new Date().getDate()) * new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate() : 0;
-  const projectedSavings = Number(settings.monthlyIncome || 0) - projectedSpend;
+  const monthlyIncome = Number(settings.monthlyIncome) || 0;
+  const monthlySavingsTarget = Number(settings.monthlySavingsTarget) || 0;
+  const projectedSavings = monthlyIncome - projectedSpend;
   const goalAmount = Number(settings.savingGoalAmount) || 0;
   const goalSaved = Number(settings.savingGoalSaved) || 0;
 
   return {
     today: {
-      spent: sum(todayExpenses),
+      spent: todaySpent,
       limit: dailyLimit,
-      remaining: dailyLimit - sum(todayExpenses),
-      overLimit: dailyLimit > 0 && sum(todayExpenses) > dailyLimit,
+      remaining: dailyLimit - todaySpent,
+      overLimit: dailyLimit > 0 && todaySpent > dailyLimit,
+      threshold,
+      thresholdRemaining: threshold - todaySpent,
+      thresholdReached: threshold > 0 && todaySpent >= threshold,
     },
     month: {
       spent: sum(monthExpenses),
       avgDailySpend: sum(monthExpenses) / activeDays,
       projectedSavings,
       projectedSpend,
+      income: monthlyIncome,
+      fixedSavings: monthlySavingsTarget,
+      availableAfterSavings: monthlyIncome - monthlySavingsTarget - sum(monthExpenses),
+      savingsSettled: monthlySavingsTarget > 0,
+      monthKey: monthStart.slice(0, 7),
     },
     streakDaysUnderLimit,
     daysOverLimitLast30,
     trend,
     byCategory: Object.entries(categoryTotals).map(([category, total]) => ({ category, total })),
     goal: {
-      name: settings.savingGoalName || "Trip to Europe",
+      name: settings.savingGoalName || "My goal",
       amount: goalAmount,
       saved: goalSaved,
       remaining: Math.max(goalAmount - goalSaved, 0),
@@ -131,7 +144,7 @@ export const api = {
   }),
   importData: async (data) => {
     if (!data || typeof data !== "object" || !Array.isArray(data.expenses) || !data.settings) {
-      throw new Error("This is not a valid Fernweh backup file.");
+      throw new Error("This is not a valid Skaltuchet backup file.");
     }
     write(SETTINGS_KEY, { ...DEFAULT_SETTINGS, ...data.settings });
     write(EXPENSES_KEY, data.expenses.map((expense) => ({

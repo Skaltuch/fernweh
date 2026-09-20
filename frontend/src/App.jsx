@@ -4,14 +4,15 @@ import SettingsForm from "./components/SettingsForm.jsx";
 import DailySpend from "./components/DailySpend.jsx";
 import MetricsDashboard from "./components/MetricsDashboard.jsx";
 import NotificationSetup from "./components/NotificationSetup.jsx";
+import { money } from "./format.js";
 
 const QUOTES = [
-  "Every euro you don't spend today is a step closer to that flight to Europe.",
-  "You're not depriving yourself — you're funding a better memory.",
-  "Future-you, sitting in a café abroad, says thank you.",
-  "Discipline today is a plane ticket tomorrow.",
-  "One boring day of restraint funds one unforgettable day away.",
-  "The trip is real if you make it real. Check today's spend.",
+  "A clear budget gives every dinar a job.",
+  "You are building a calmer relationship with money.",
+  "One steady choice today makes tomorrow easier.",
+  "Progress does not need to be perfect to count.",
+  "Your goal gets stronger every time you check in.",
+  "Small decisions become meaningful results.",
 ];
 
 function todayStr() {
@@ -77,7 +78,7 @@ export default function App() {
   if (loading) {
     return (
       <div style={{ padding: 40, textAlign: "center", color: "#8FA3BF" }}>
-        Loading Fernweh…
+        Loading Skaltuchet…
       </div>
     );
   }
@@ -99,9 +100,9 @@ export default function App() {
         <div className="brand-lockup">
           <span className="brand-mark" aria-hidden="true">↗</span>
           <div>
-            <div className="eyebrow">Personal travel fund</div>
-            <h1>Fernweh</h1>
-            <div className="tagline">save now, wander later</div>
+            <div className="eyebrow">Personal money system</div>
+            <h1>Skaltuchet</h1>
+            <div className="tagline">clear choices, steady progress</div>
           </div>
         </div>
         <button className="icon-button" onClick={() => setShowSettings(true)} aria-label="Open budget settings">
@@ -119,12 +120,12 @@ export default function App() {
                   {limit > 0 ? "Left to spend today" : "Set a daily limit to see this"}
                 </div>
                 <p className={`amount ${overLimit ? "over" : "under"}`}>
-                  {limit > 0 ? remaining.toFixed(2) : todaySpent.toFixed(2)}
+                  {limit > 0 ? money(remaining) : money(todaySpent)}
                 </p>
                 <div className="sub">
                   {limit > 0
-                    ? `${todaySpent.toFixed(2)} spent of ${limit.toFixed(2)} limit`
-                    : `${todaySpent.toFixed(2)} spent today`}
+                    ? `${money(todaySpent)} spent of ${money(limit)} limit`
+                    : `${money(todaySpent)} spent today`}
                 </div>
                 {limit > 0 && (
                   <div className="bar-track">
@@ -133,9 +134,24 @@ export default function App() {
                 )}
               </div>
               <div className="hero-orbit" aria-hidden="true">
-                <span>TRIP FUND</span>
-                <strong>{summary?.month.projectedSavings?.toFixed(0) ?? "0"}</strong>
-                <small>projected savings</small>
+                <span>MONTHLY SAVINGS</span>
+                <strong>{money(summary?.month.fixedSavings ?? 0, { compact: true })}</strong>
+                <small>{summary?.month.savingsSettled ? "settled by you" : "set your amount"}</small>
+              </div>
+            </section>
+
+            <section className="budget-status-grid" aria-label="Today's budget status">
+              <div className="status-panel">
+                <span>Daily limit</span>
+                <strong>{money(limit)}</strong>
+                <small>{limit > 0 ? `${money(Math.max(remaining, 0))} remaining` : "Set a limit"}</small>
+              </div>
+              <div className={`status-panel ${summary?.today.thresholdReached ? "status-alert" : ""}`}>
+                <span>Extra threshold</span>
+                <strong>{summary?.today.threshold > 0 ? money(summary.today.threshold) : "Not set"}</strong>
+                <small>{summary?.today.threshold > 0
+                  ? summary.today.thresholdReached ? "Reached today" : `${money(Math.max(summary.today.thresholdRemaining, 0))} remaining`
+                  : "Set a threshold"}</small>
               </div>
             </section>
 
@@ -148,9 +164,9 @@ export default function App() {
             />
 
             <section className="quick-stats">
-              <div><strong>{summary?.month.spent.toFixed(0) ?? "0"}</strong><span>month spend</span></div>
+              <div><strong>{money(summary?.month.spent ?? 0, { compact: true })}</strong><span>month spend</span></div>
               <div><strong>{summary?.streakDaysUnderLimit ?? 0}</strong><span>day streak</span></div>
-              <div><strong>{summary?.month.avgDailySpend.toFixed(0) ?? "0"}</strong><span>daily average</span></div>
+              <div><strong>{money(summary?.month.avgDailySpend ?? 0, { compact: true })}</strong><span>daily average</span></div>
             </section>
           </>
         )}
@@ -160,7 +176,7 @@ export default function App() {
             <div className="page-heading">
               <span className="eyebrow">Your money, in motion</span>
               <h2>Spending insights</h2>
-              <p>Find the patterns that move your trip closer.</p>
+              <p>Find the patterns that move your goal closer.</p>
             </div>
             <MetricsDashboard summary={summary} view="trends" />
           </section>
@@ -171,7 +187,7 @@ export default function App() {
             <div className="page-heading">
               <span className="eyebrow">The reason behind the numbers</span>
               <h2>{summary?.goal.name ?? "Your next adventure"}</h2>
-              <p>Small choices today become a place you have never been.</p>
+              <p>Small choices today build the result you want.</p>
             </div>
             <MetricsDashboard summary={summary} view="goal" />
           </section>

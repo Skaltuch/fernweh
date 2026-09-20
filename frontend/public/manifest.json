@@ -1,7 +1,7 @@
 {
-  "name": "Fernweh — Save now, wander later",
-  "short_name": "Fernweh",
-  "description": "A daily budget tracker built to fund your trip abroad.",
+  "name": "Skaltuchet — Clear choices, steady progress",
+  "short_name": "Skaltuchet",
+  "description": "A personal budget and savings goal tracker.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#080D16",

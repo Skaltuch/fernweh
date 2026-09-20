@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { money } from "../format.js";
 
 const CATEGORIES = ["Food", "Transport", "Coffee", "Shopping", "Bills", "Fun", "Other"];
 
@@ -64,7 +65,7 @@ export default function DailySpend({ expenses, onAdd, onDelete }) {
                 <span className="expense-category">{exp.category}</span>
               </div>
               <div style={{ display: "flex", alignItems: "center" }}>
-                <span className="expense-amount">{exp.amount.toFixed(2)}</span>
+                <span className="expense-amount">{money(exp.amount)}</span>
                 <button className="expense-delete" onClick={() => onDelete(exp.id)}>
                   remove
                 </button>

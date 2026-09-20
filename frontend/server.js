@@ -24,8 +24,8 @@ const PORT = runtimeConfig.port;
 const DATA_FILE = path.join(__dirname, "push-data.json");
 const allowedOrigins = (runtimeConfig.corsOrigin || "http://localhost:5173").split(",").map((value) => value.trim());
 const messages = [
-  ["A little progress, Fernweh", "Future-you is going to love the choices you make today."],
-  ["Your future trip is calling", "Every amount you keep is buying a little more freedom later."],
+  ["A little progress, Skaltuchet", "Future-you is going to love the choices you make today."],
+  ["Your goal is getting stronger", "Every amount you keep is building more freedom later."],
   ["Good vibes, better plans", "Take a breath. You are doing better than yesterday's version of you."],
 ];
 
@@ -63,11 +63,12 @@ function zonedNow(timeZone) {
 
 function snapshotLine(snapshot) {
   const today = snapshot?.today || {};
-  const spent = Number(today.spent || 0).toFixed(2);
+  const format = (value) => `${Number(value || 0).toFixed(3)} TND`;
+  const spent = format(today.spent);
   if (!today.limit) return `You have spent ${spent} today.`;
   return today.overLimit
-    ? `You have spent ${spent} today and are ${Math.abs(Number(today.remaining || 0)).toFixed(2)} over your limit.`
-    : `You can spend ${Math.max(Number(today.remaining || 0), 0).toFixed(2)} more today.`;
+    ? `You have spent ${spent} today and are ${format(Math.abs(Number(today.remaining || 0)))} over your limit.`
+    : `You can spend ${format(Math.max(Number(today.remaining || 0), 0))} more today.`;
 }
 
 async function sendDueNotifications() {

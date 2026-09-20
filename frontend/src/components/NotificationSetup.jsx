@@ -107,13 +107,13 @@ export default function NotificationSetup() {
   }
 
   if (!supported) {
-    return <div className="card notification-card"><h2>Fernweh reminders</h2><p className="card-meta">Browser notifications are not supported here. Your budget still works offline on this device.</p></div>;
+    return <div className="card notification-card"><h2>Skaltuchet reminders</h2><p className="card-meta">Browser notifications are not supported here. Your budget still works offline on this device.</p></div>;
   }
 
   return (
     <div className="card notification-card">
       <div className="notification-heading">
-        <div><span className="eyebrow">Gentle nudges, better trips</span><h2>Fernweh reminders</h2></div>
+        <div><span className="eyebrow">Gentle nudges, better goals</span><h2>Skaltuchet reminders</h2></div>
         <span className={`notification-pulse ${enabled && permission === "granted" ? "on" : ""}`} />
       </div>
       <p className="card-meta">A fresh spending check, motivation, or good vibe every two hours, plus your chosen times.</p>

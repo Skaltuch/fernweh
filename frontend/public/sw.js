@@ -1,5 +1,5 @@
 self.addEventListener("push", (event) => {
-  let data = { title: "Fernweh", body: "Check today's spending." };
+  let data = { title: "Skaltuchet", body: "Check today's spending." };
   try {
     if (event.data) data = event.data.json();
   } catch {
@@ -7,7 +7,7 @@ self.addEventListener("push", (event) => {
   }
 
   event.waitUntil(
-    self.registration.showNotification(data.title || "Fernweh", {
+    self.registration.showNotification(data.title || "Skaltuchet", {
       body: data.body || "",
       icon: "/icon.svg",
       badge: "/icon.svg",

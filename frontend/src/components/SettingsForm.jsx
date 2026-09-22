@@ -11,30 +11,12 @@ export default function SettingsForm({ settings, onSave, onImport, onClose }) {
     savingGoalTargetDate: settings.savingGoalTargetDate || "",
     dailySpendLimit: settings.dailySpendLimit || "",
     extraSpendThreshold: settings.extraSpendThreshold || "",
-    reminderTimes: settings.reminderTimes?.length ? settings.reminderTimes : ["09:00", "20:00"],
-    timezone: settings.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
   });
-  const [newTime, setNewTime] = useState("");
   const [saving, setSaving] = useState(false);
   const [backupMessage, setBackupMessage] = useState("");
 
   function update(field, value) {
     setForm((f) => ({ ...f, [field]: value }));
-  }
-
-  function addTime() {
-    if (!newTime) return;
-    if (!form.reminderTimes.includes(newTime)) {
-      update("reminderTimes", [...form.reminderTimes, newTime].sort());
-    }
-    setNewTime("");
-  }
-
-  function removeTime(t) {
-    update(
-      "reminderTimes",
-      form.reminderTimes.filter((x) => x !== t)
-    );
   }
 
   async function submit(e) {
@@ -50,8 +32,6 @@ export default function SettingsForm({ settings, onSave, onImport, onClose }) {
         savingGoalTargetDate: form.savingGoalTargetDate || null,
         dailySpendLimit: parseFloat(form.dailySpendLimit) || 0,
         extraSpendThreshold: parseFloat(form.extraSpendThreshold) || 0,
-        reminderTimes: form.reminderTimes,
-        timezone: form.timezone,
       });
       onClose();
     } finally {
@@ -88,7 +68,7 @@ export default function SettingsForm({ settings, onSave, onImport, onClose }) {
     <div className="modal-backdrop" role="dialog" aria-modal="true">
       <div className="modal-sheet">
         <h2>Your budget</h2>
-        <p className="modal-sub">This drives every limit, reminder, and metric in the app.</p>
+        <p className="modal-sub">This drives every limit and metric in the app.</p>
 
         <form onSubmit={submit}>
           <div className="settings-grid">
@@ -135,16 +115,6 @@ export default function SettingsForm({ settings, onSave, onImport, onClose }) {
                 onChange={(e) => update("extraSpendThreshold", e.target.value)}
               />
             </div>
-            <div className="field">
-              <label htmlFor="tz">Timezone</label>
-              <input
-                id="tz"
-                type="text"
-                value={form.timezone}
-                onChange={(e) => update("timezone", e.target.value)}
-              />
-            </div>
-
             <div className="field full">
               <label htmlFor="goalName">Saving goal</label>
               <input
@@ -183,29 +153,6 @@ export default function SettingsForm({ settings, onSave, onImport, onClose }) {
                 value={form.savingGoalTargetDate || ""}
                 onChange={(e) => update("savingGoalTargetDate", e.target.value)}
               />
-            </div>
-
-            <div className="field full">
-              <label>Daily reminder times</label>
-              <div className="reminder-times">
-                {form.reminderTimes.map((t) => (
-                  <span className="chip" key={t}>
-                    {t}
-                    <button type="button" onClick={() => removeTime(t)} aria-label={`Remove ${t}`}>
-                      ×
-                    </button>
-                  </span>
-                ))}
-                <input
-                  type="time"
-                  value={newTime}
-                  onChange={(e) => setNewTime(e.target.value)}
-                  style={{ width: 110 }}
-                />
-                <button type="button" className="btn-ghost" onClick={addTime}>
-                  Add time
-                </button>
-              </div>
             </div>
 
             <div className="field full backup-tools">

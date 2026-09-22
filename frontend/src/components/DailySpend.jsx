@@ -1,13 +1,18 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { money } from "../format.js";
+import { api } from "../api.js";
 
-const CATEGORIES = ["Food", "Transport", "Coffee", "Shopping", "Bills", "Fun", "Other"];
-
-export default function DailySpend({ expenses, onAdd, onDelete }) {
+export default function DailySpend({ expenses, onAdd, onUpdate, onDelete, title = "Today's spending" }) {
   const [amount, setAmount] = useState("");
-  const [category, setCategory] = useState(CATEGORIES[0]);
-  const [note, setNote] = useState("");
+  const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const [editingId, setEditingId] = useState(null);
+  const [editDraft, setEditDraft] = useState({ amount: "", reason: "" });
+
+  useEffect(() => {
+    api.getReasonSuggestions().then(setSuggestions).catch(() => {});
+  }, [expenses]);
 
   async function submit(e) {
     e.preventDefault();
@@ -15,20 +20,33 @@ export default function DailySpend({ expenses, onAdd, onDelete }) {
     if (!value || value <= 0) return;
     setBusy(true);
     try {
-      await onAdd({ amount: value, category, note: note.trim() || undefined });
+      await onAdd({ amount: value, category: reason.trim() || "Uncategorized" });
       setAmount("");
-      setNote("");
+      setReason("");
     } finally {
       setBusy(false);
     }
   }
 
+  function startEdit(exp) {
+    setEditingId(exp.id);
+    setEditDraft({ amount: String(exp.amount), reason: exp.category || "" });
+  }
+
+  async function saveEdit(id) {
+    const value = parseFloat(editDraft.amount);
+    if (!value || value <= 0) return;
+    await onUpdate(id, { amount: value, category: editDraft.reason.trim() || "Uncategorized" });
+    setEditingId(null);
+  }
+
   return (
-    <div className="card">
-      <h2>Today's spending</h2>
+    <div className="card spend-card">
+      <h2>{title}</h2>
       <form className="expense-form" onSubmit={submit}>
         <input
           type="number"
+          inputMode="decimal"
           step="0.01"
           min="0"
           placeholder="Amount"
@@ -36,40 +54,69 @@ export default function DailySpend({ expenses, onAdd, onDelete }) {
           onChange={(e) => setAmount(e.target.value)}
           required
         />
-        <select value={category} onChange={(e) => setCategory(e.target.value)}>
-          {CATEGORIES.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
         <input
           type="text"
-          placeholder="Note (optional)"
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
+          className="reason-input"
+          placeholder="What was it for?"
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          list="reason-suggestions"
         />
+        <datalist id="reason-suggestions">
+          {suggestions.map((s) => (
+            <option key={s} value={s} />
+          ))}
+        </datalist>
         <button type="submit" disabled={busy}>
           Add
         </button>
       </form>
 
       {expenses.length === 0 ? (
-        <p className="empty-state">Nothing logged yet today. Add your first spend above.</p>
+        <p className="empty-state">Nothing logged for this day yet.</p>
       ) : (
         <ul className="expense-list">
           {expenses.map((exp) => (
-            <li key={exp.id}>
-              <div className="expense-info">
-                <span className="expense-note">{exp.note || exp.category}</span>
-                <span className="expense-category">{exp.category}</span>
-              </div>
-              <div style={{ display: "flex", alignItems: "center" }}>
-                <span className="expense-amount">{money(exp.amount)}</span>
-                <button className="expense-delete" onClick={() => onDelete(exp.id)}>
-                  remove
-                </button>
-              </div>
+            <li key={exp.id} className={editingId === exp.id ? "editing" : ""}>
+              {editingId === exp.id ? (
+                <div className="expense-edit-row">
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    step="0.01"
+                    min="0"
+                    value={editDraft.amount}
+                    onChange={(e) => setEditDraft((d) => ({ ...d, amount: e.target.value }))}
+                  />
+                  <input
+                    type="text"
+                    value={editDraft.reason}
+                    onChange={(e) => setEditDraft((d) => ({ ...d, reason: e.target.value }))}
+                    list="reason-suggestions"
+                  />
+                  <div className="expense-edit-actions">
+                    <button type="button" className="btn-ghost sm" onClick={() => setEditingId(null)}>
+                      Cancel
+                    </button>
+                    <button type="button" className="btn-primary sm" onClick={() => saveEdit(exp.id)}>
+                      Save
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <button className="expense-info" onClick={() => startEdit(exp)}>
+                    <span className="expense-note">{exp.category || "Uncategorized"}</span>
+                    <span className="expense-category">{exp.date}</span>
+                  </button>
+                  <div className="expense-right">
+                    <span className="expense-amount">{money(exp.amount)}</span>
+                    <button className="expense-delete" onClick={() => onDelete(exp.id)} aria-label="Delete expense">
+                      ✕
+                    </button>
+                  </div>
+                </>
+              )}
             </li>
           ))}
         </ul>
@@ -77,5 +124,3 @@ export default function DailySpend({ expenses, onAdd, onDelete }) {
     </div>
   );
 }
-
-export { CATEGORIES };

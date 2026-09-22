@@ -1,15 +1,5 @@
 const SETTINGS_KEY = "fernweh.settings";
 const EXPENSES_KEY = "fernweh.expenses";
-const BASE = import.meta.env.VITE_API_BASE || "";
-
-async function pushRequest(path, options = {}) {
-  const response = await fetch(`${BASE}/api/push${path}`, {
-    headers: { "Content-Type": "application/json" },
-    ...options,
-  });
-  if (!response.ok) throw new Error(await response.text());
-  return response.json();
-}
 
 const DEFAULT_SETTINGS = {
   monthlyIncome: 0,
@@ -20,8 +10,6 @@ const DEFAULT_SETTINGS = {
   savingGoalTargetDate: null,
   dailySpendLimit: 0,
   extraSpendThreshold: 0,
-  reminderTimes: ["09:00", "20:00"],
-  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
 };
 
 function read(key, fallback) {
@@ -97,6 +85,35 @@ function buildSummary() {
   const goalAmount = Number(settings.savingGoalAmount) || 0;
   const goalSaved = Number(settings.savingGoalSaved) || 0;
 
+  const last30 = expenses.filter((expense) => expense.date >= dateOffset(-29) && expense.date <= currentDay);
+  const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const weekdayTotals = WEEKDAY_LABELS.map(() => ({ total: 0, count: 0 }));
+  last30.forEach((expense) => {
+    const dow = new Date(`${expense.date}T00:00:00`).getDay();
+    weekdayTotals[dow].total += expense.amount;
+    weekdayTotals[dow].count += 1;
+  });
+  const byWeekday = WEEKDAY_LABELS.map((label, index) => ({
+    day: label,
+    avg: weekdayTotals[index].count ? weekdayTotals[index].total / weekdayTotals[index].count : 0,
+  }));
+
+  const dayTotalsMap = {};
+  last30.forEach((expense) => {
+    dayTotalsMap[expense.date] = (dayTotalsMap[expense.date] || 0) + expense.amount;
+  });
+  const dayTotalsList = Object.entries(dayTotalsMap).map(([date, total]) => ({ date, total }));
+  const bestDay = dayTotalsList.length
+    ? dayTotalsList.reduce((min, cur) => (cur.total < min.total ? cur : min))
+    : null;
+  const worstDay = dayTotalsList.length
+    ? dayTotalsList.reduce((max, cur) => (cur.total > max.total ? cur : max))
+    : null;
+
+  const savingsRate = monthlyIncome > 0
+    ? Math.max(Math.min(((monthlyIncome - sum(monthExpenses)) / monthlyIncome) * 100, 100), -100)
+    : 0;
+
   return {
     today: {
       spent: todaySpent,
@@ -121,7 +138,13 @@ function buildSummary() {
     streakDaysUnderLimit,
     daysOverLimitLast30,
     trend,
-    byCategory: Object.entries(categoryTotals).map(([category, total]) => ({ category, total })),
+    byCategory: Object.entries(categoryTotals)
+      .map(([category, total]) => ({ category, total }))
+      .sort((a, b) => b.total - a.total),
+    byWeekday,
+    bestDay,
+    worstDay,
+    savingsRate,
     goal: {
       name: settings.savingGoalName || "My goal",
       amount: goalAmount,
@@ -163,11 +186,33 @@ export const api = {
     write(EXPENSES_KEY, [...getExpenses(), expense]);
     return expense;
   },
+  updateExpense: async (id, data) => {
+    const expenses = getExpenses().map((expense) =>
+      expense.id === id ? { ...expense, ...data, amount: Number(data.amount ?? expense.amount) } : expense
+    );
+    write(EXPENSES_KEY, expenses);
+    return expenses.find((expense) => expense.id === id);
+  },
   deleteExpense: async (id) => write(EXPENSES_KEY, getExpenses().filter((expense) => expense.id !== id)),
   getSummary: async () => buildSummary(),
-  getVapidPublicKey: () => pushRequest("/vapid-public-key"),
-  subscribePush: (payload) => pushRequest("/subscribe", { method: "POST", body: JSON.stringify(payload) }),
-  syncPushSnapshot: (payload) => pushRequest("/snapshot", { method: "POST", body: JSON.stringify(payload) }),
-  unsubscribePush: (endpoint) => pushRequest("/unsubscribe", { method: "POST", body: JSON.stringify({ endpoint }) }),
-  testPush: (endpoint) => pushRequest("/test", { method: "POST", body: JSON.stringify({ endpoint }) }),
+  getReasonSuggestions: async () => {
+    const counts = {};
+    getExpenses().forEach((expense) => {
+      const reason = (expense.category || "").trim();
+      if (reason) counts[reason] = (counts[reason] || 0) + 1;
+    });
+    return Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .map(([reason]) => reason);
+  },
+  getActiveDays: async () => {
+    const byDate = {};
+    getExpenses().forEach((expense) => {
+      byDate[expense.date] = (byDate[expense.date] || 0) + expense.amount;
+    });
+    return Object.entries(byDate)
+      .map(([date, total]) => ({ date, total }))
+      .sort((a, b) => (a.date < b.date ? 1 : -1));
+  },
+  today,
 };

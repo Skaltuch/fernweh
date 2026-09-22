@@ -2,8 +2,8 @@ import { useEffect, useState, useCallback } from "react";
 import { api } from "./api.js";
 import SettingsForm from "./components/SettingsForm.jsx";
 import DailySpend from "./components/DailySpend.jsx";
+import SpendingHistory from "./components/SpendingHistory.jsx";
 import MetricsDashboard from "./components/MetricsDashboard.jsx";
-import NotificationSetup from "./components/NotificationSetup.jsx";
 import { money } from "./format.js";
 
 const QUOTES = [
@@ -26,6 +26,7 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [activePage, setActivePage] = useState("home");
   const [loading, setLoading] = useState(true);
+  const [refreshSignal, setRefreshSignal] = useState(0);
   const [quote] = useState(QUOTES[Math.floor(Math.random() * QUOTES.length)]);
 
   const refresh = useCallback(async () => {
@@ -37,10 +38,7 @@ export default function App() {
     setSettings(s);
     setSummary(sum);
     setTodayExpenses(exp);
-    const endpoint = localStorage.getItem("fernweh.pushEndpoint");
-    if (endpoint) {
-      api.syncPushSnapshot({ endpoint, settings: s, summary: sum }).catch(() => {});
-    }
+    setRefreshSignal((n) => n + 1);
   }, []);
 
   useEffect(() => {
@@ -57,6 +55,11 @@ export default function App() {
 
   async function handleAddExpense(data) {
     await api.addExpense(data);
+    await refresh();
+  }
+
+  async function handleUpdateExpense(id, data) {
+    await api.updateExpense(id, data);
     await refresh();
   }
 
@@ -77,7 +80,8 @@ export default function App() {
 
   if (loading) {
     return (
-      <div style={{ padding: 40, textAlign: "center", color: "#8FA3BF" }}>
+      <div className="app-loading">
+        <div className="app-loading-spinner" aria-hidden="true" />
         Loading Skaltuchet…
       </div>
     );
@@ -90,6 +94,7 @@ export default function App() {
   const pct = limit > 0 ? Math.min((todaySpent / limit) * 100, 100) : 0;
   const navItems = [
     { id: "home", label: "Today", icon: "⌂" },
+    { id: "history", label: "History", icon: "◷" },
     { id: "trends", label: "Insights", icon: "⌁" },
     { id: "goal", label: "Goal", icon: "◌" },
   ];
@@ -160,6 +165,7 @@ export default function App() {
             <DailySpend
               expenses={todayExpenses}
               onAdd={handleAddExpense}
+              onUpdate={handleUpdateExpense}
               onDelete={handleDeleteExpense}
             />
 
@@ -169,6 +175,17 @@ export default function App() {
               <div><strong>{money(summary?.month.avgDailySpend ?? 0, { compact: true })}</strong><span>daily average</span></div>
             </section>
           </>
+        )}
+
+        {activePage === "history" && (
+          <section className="page-section">
+            <div className="page-heading">
+              <span className="eyebrow">Every day, on record</span>
+              <h2>Spending history</h2>
+              <p>Step back to any day and see exactly what happened.</p>
+            </div>
+            <SpendingHistory settings={settings} refreshSignal={refreshSignal} onRefresh={refresh} />
+          </section>
         )}
 
         {activePage === "trends" && (
@@ -193,8 +210,6 @@ export default function App() {
           </section>
         )}
       </main>
-
-      <NotificationSetup />
 
       <nav className="bottom-nav" aria-label="Main navigation">
         {navItems.map((item) => (
